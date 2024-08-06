@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 const Hero = () => {
   return (
     <div>
-      <div className=" flex items-center mx-56 gap-9 text-center ">
+      <div className=" flex items-center mx-56 gap-9 text-center mt-[30px] ">
         <h1 className="font-extrabold text-[48px]">
           Come and Generate the new idea of a{" "}
           <span className="text-orange-600 font-sans">Adventure</span>
@@ -18,7 +18,7 @@ const Hero = () => {
         </p>
       </div>
       <div className=" flex p-2 justify-center items-center">
-        <Link to={'/create-trip'}>
+        <Link to={"/create-trip"}>
           <Button>Lets Get Started.</Button>
         </Link>
       </div>
