@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import GooglePlacesAutocomplete from "react-google-autocomplete";
 import { Input } from "@/components/ui/input";
-import { SelectBudget } from "@/constants/option";
-
+import { SelectBudget, SelectTravelList } from "@/constants/option";
+import { Button } from "@/components/ui/button";
 const CreateTrip = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const [place, setPlace] = useState(null);
@@ -21,6 +21,7 @@ const CreateTrip = () => {
             <h2 className="text-xl my-3 font-medium">Where you want to GO?</h2>
             <div className="mb-6">
               <GooglePlacesAutocomplete
+                placeholder={"Enter the Location🌏"}
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 apiKey={apiKey}
                 onPlaceSelected={(place) => {
@@ -43,20 +44,46 @@ const CreateTrip = () => {
                 {SelectBudget.map((budget) => (
                   <div
                     key={budget.id}
-                    className="p-4 border rounded-lg justify-center align-center  hover:bg-pink-100"
+                    className="p-4 border rounded-lg justify-center align-center  hover:shadow-lg "
                   >
                     <img
                       src={budget.icon}
                       alt={budget.title}
-                      className="w-24 h-24 object-cover "
+                      className="w-12 h-12 object-cover text-4xl "
                     />
                     <h3 className="font-bold text-lg">{budget.title}</h3>
-                    <p>{budget.description}</p>
+                    <p className="text-sm text-gray-500">
+                      {budget.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <h2 className="text-xl my-3 font-medium">
+                You are Planning with Whom?
+              </h2>
+              <div className="grid grid-cols-3 gap-5 mt-4">
+                {SelectTravelList.map((budget) => (
+                  <div
+                    key={budget.id}
+                    className="p-4 border rounded-lg justify-center align-center  hover:shadow-lg "
+                  >
+                    <img
+                      src={budget.icon}
+                      alt={budget.title}
+                      className="w-10 h-10 object-cover text-2xl "
+                    />
+                    <h3 className="font-bold text-lg">{budget.title}</h3>
+                    <p className="text-sm text-gray-500">
+                      {budget.description}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+        <div className="mt-4  mb-16 flex justify-end">
+          <Button>Generate Trip!🗺️</Button>
         </div>
       </div>
     </div>
