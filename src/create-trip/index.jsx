@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import GooglePlacesAutocomplete from "react-google-autocomplete";
 import { Input } from "@/components/ui/input";
+import { SelectBudget } from "@/constants/option";
 
 const CreateTrip = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -32,7 +33,28 @@ const CreateTrip = () => {
               <h2 className="text-xl my-3 font-medium">
                 For how many days you are planning?
               </h2>
-              <Input placeholder={'Ex-5'} type='number'/>
+              <Input placeholder={"Ex-5"} type="number" />
+            </div>
+            <div>
+              <h2 className="text-xl my-3 font-medium">
+                How much is your Budget?
+              </h2>
+              <div className="grid grid-cols-3 gap-5 mt-4">
+                {SelectBudget.map((budget) => (
+                  <div
+                    key={budget.id}
+                    className="p-4 border rounded-lg justify-center align-center  hover:bg-pink-100"
+                  >
+                    <img
+                      src={budget.icon}
+                      alt={budget.title}
+                      className="w-24 h-24 object-cover "
+                    />
+                    <h3 className="font-bold text-lg">{budget.title}</h3>
+                    <p>{budget.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

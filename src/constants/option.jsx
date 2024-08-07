@@ -18,6 +18,6 @@ export const SelectBudget = [
     title: "High",
     description: "A high to invest get more",
     icon: "/high.svg",
-    people:'3'
+    people:'3 to 5'
   }
 ];
