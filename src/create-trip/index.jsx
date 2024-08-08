@@ -3,6 +3,8 @@ import GooglePlacesAutocomplete from "react-google-autocomplete";
 import { Input } from "@/components/ui/input";
 import { SelectBudget, SelectTravelList } from "@/constants/option";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const CreateTrip = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -20,8 +22,22 @@ const CreateTrip = () => {
     console.log(formData);
   }, [formData]);
 
+  const GenerateTrip = () => {
+    
+    if (
+      formData?.noOfDays>5 ||
+      !formData?.destination ||
+      !formData?.budget ||
+      !formData?.travel
+    ) {
+      return toast.error("Please fill in all the details");
+    }
+    console.log(formData);
+  };
+
   return (
     <div className="container">
+      <Toaster position="top-right" />
       <div className="sm:px-10 md:px-32 lg:px-56 xl:px-72 px-8 mt-10">
         <h2 className="font-bold text-3xl">What you have to do?</h2>
         <p className="text-gray-500">
@@ -110,7 +126,7 @@ const CreateTrip = () => {
           </div>
         </div>
         <div className="mt-4 mb-16 flex justify-end">
-          <Button>Generate Trip!🗺️</Button>
+          <Button onClick={GenerateTrip}>Generate Trip!🗺️</Button>
         </div>
       </div>
     </div>
