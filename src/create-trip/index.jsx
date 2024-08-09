@@ -29,7 +29,7 @@ import {
 
 import { FcGoogle } from "react-icons/fc";
 import { useGoogleLogin } from "@react-oauth/google";
-import axios, { isCancel, AxiosError } from "axios";
+import axios from "axios";
 
 const CreateTrip = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -64,8 +64,6 @@ const CreateTrip = () => {
   }, [formData]);
 
   const GenerateTrip = async () => {
-
-
     if (
       !formData?.destination ||
       !formData?.noOfDays ||
@@ -75,16 +73,13 @@ const CreateTrip = () => {
       return toast.error("Please fill in all the details");
     }
 
-      const user = localStorage.getItem("user");
+    const user = localStorage.getItem("user");
 
-        if (user) {
-          
-          return;
-        }
-        else{
-          setOpenDialog(true);
-
-        }
+    if (user) {
+      return;
+    } else {
+      setOpenDialog(true);
+    }
 
     const FINAL_PROMPT = AI_PROMPT.replace(
       "{location}",
@@ -129,31 +124,47 @@ const CreateTrip = () => {
   };
 
   const login = useGoogleLogin({
-    onSuccess: (tokenResponse) => console.log(tokenResponse),
+    onSuccess: (tokenResponse) => {
+      GetUserProfile(tokenResponse);
+    },
   });
 
-const GetUserProfile = (tokenInfo) => {
-  axios
-    .get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`,
-      {
-        headers: {
-          Authorization: `Bearer ${tokenInfo?.access_token}`,
-          Accept: "Application/json",
-        },
-      }
-    )
-    .then((response) => {
-      console.log(response);
-      localStorage.setItem("user", JSON.stringify(response.data));
-      setOpenDialog(true);
-      GenerateTrip();
-    })
-    .catch((error) => {
-      console.error("Error fetching user profile:", error);
+  const GetUserProfile = (tokenInfo) => {
+    axios
+      .get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenInfo?.access_token}`,
+            Accept: "Application/json",
+          },
+        }
+      )
+      .then((response) => {
+        console.log(response);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        GenerateTrip();
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+      });
+  };
 
-    });
-};
+  // Function to open a window and check if it's closed
+  const openAndMonitorWindow = (url) => {
+    const popup = window.open(url);
+
+    if (popup) {
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer);
+          console.log("Popup window closed");
+        }
+      }, 500);
+    } else {
+      console.error("Failed to open popup window");
+    }
+  };
 
   return (
     <div className="container">
@@ -267,34 +278,27 @@ const GetUserProfile = (tokenInfo) => {
               <DialogTitle className="">
                 <div className="flex">
                   <img src="/logo.svg" alt="" className="" />
-                  <div className="pl-3 text-justify text-lg">
-                    Sign-In with Google
+                  <div className="ml-4">
+                    <h1 className="font-bold">Welcome back to AI Trip</h1>
+                    <p className="text-gray-600">
+                      Please sign in with your Google account to continue.
+                    </p>
                   </div>
                 </div>
               </DialogTitle>
-              <DialogDescription>
-                <p className="p-2 inline">
-                  <span>
-                    Sign in to the App with
-                    <img src="/google.svg" alt="" className="h-[1.7rem]" />{" "}
-                    OAuth Security
-                  </span>
-                </p>
-                <Button
-                  type="submit"
-                  className="w-full mt-3"
-                  onClick={() => login()}
-                >
-                  <FcGoogle className="h-7 w-5" />
-                  Sign In with Google
-                </Button>
-              </DialogDescription>
+              <DialogDescription></DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-              <button onClick={handleCloseDialog} aria-label="Close">
-                &times;
-              </button>
-            </DialogFooter>
+            <div className="p-6 bg-gray-100 rounded-lg mb-6">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={login}
+              >
+                <FcGoogle className="text-2xl mr-3" /> Sign in with Google
+              </Button>
+            </div>
+            <DialogFooter className="flex justify-center"></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
