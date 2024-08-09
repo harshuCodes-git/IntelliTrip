@@ -30,12 +30,16 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/service/firebaseConfig";
+import { LiaTruckLoadingSolid } from "react-icons/lia";
 
 const CreateTrip = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const [place, setPlace] = useState(null);
   const [formData, setFormData] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
   const genAI = new GoogleGenerativeAI(
     import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY
   );
@@ -53,10 +57,22 @@ const CreateTrip = () => {
   };
 
   const handleInputChange = (name, value) => {
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    if (name === "destination") {
+      const simplifiedPlace = {
+        formatted_address: value.formatted_address,
+        lat: value.geometry.location.lat(),
+        lng: value.geometry.location.lng(),
+      };
+      setFormData({
+        ...formData,
+        [name]: simplifiedPlace,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   useEffect(() => {
@@ -64,33 +80,30 @@ const CreateTrip = () => {
   }, [formData]);
 
   const GenerateTrip = async () => {
-    if (
-      !formData?.destination ||
-      !formData?.noOfDays ||
-      !formData?.budget ||
-      !formData?.travel
-    ) {
+    const { destination, noOfDays, budget, travel } = formData;
+
+    if (!destination || !noOfDays || !budget || !travel) {
       return toast.error("Please fill in all the details");
     }
 
     const user = localStorage.getItem("user");
 
-    if (user) {
-      return;
-    } else {
+    if (!user) {
       setOpenDialog(true);
+      return;
     }
+
+    setLoading(true);
 
     const FINAL_PROMPT = AI_PROMPT.replace(
       "{location}",
-      formData?.destination?.formatted_address
+      destination?.formatted_address
     )
-      .replace("{noOfDays}", formData?.noOfDays)
-      .replace("{travel}", formData?.travel)
-      .replace("{budget}", formData?.budget)
-      .replace("{noOfDays}", formData?.noOfDays);
+      .replace("{noOfDays}", noOfDays)
+      .replace("{travel}", travel)
+      .replace("{budget}", budget);
 
-    console.log(FINAL_PROMPT);
+    console.log("FINAL_PROMPT: ", FINAL_PROMPT);
 
     try {
       const chatSession = model.startChat({
@@ -107,12 +120,36 @@ const CreateTrip = () => {
         ],
       });
 
+      console.log("Chat session started...");
+
       const result = await chatSession.sendMessage(FINAL_PROMPT);
-      console.log(result?.response?.text());
+
+      console.log("AI Response: ", result?.response?.text());
+
+      if (result?.response?.text()) {
+        setLoading(false);
+        SaveAiTrip(result?.response?.text());
+        toast.success("Trip generated successfully!");
+      } else {
+        throw new Error("No response from AI model");
+      }
     } catch (error) {
       console.error("Error generating trip:", error);
       toast.error("Failed to generate trip. Please try again.");
     }
+  };
+
+  const SaveAiTrip = async (result) => {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const docId = Date.now().toString();
+    await setDoc(doc(db, "AITrips", docId), {
+      userSelection: formData,
+      tripData: result,
+      userEmail: user?.email,
+      id: docId,
+    });
+    setLoading(false);
   };
 
   const handleOpenDialog = () => {
@@ -141,7 +178,7 @@ const CreateTrip = () => {
         }
       )
       .then((response) => {
-        console.log(response);
+        console.log("User profile: ", response.data);
         localStorage.setItem("user", JSON.stringify(response.data));
         GenerateTrip();
       })
@@ -150,7 +187,6 @@ const CreateTrip = () => {
       });
   };
 
-  // Function to open a window and check if it's closed
   const openAndMonitorWindow = (url) => {
     const popup = window.open(url);
 
@@ -257,51 +293,51 @@ const CreateTrip = () => {
           </div>
         </div>
         <div className="mt-4 mb-16 flex justify-end">
-          <Button onClick={GenerateTrip}>Generate Trip!🗺️</Button>
+          <Button disabled={loading} onClick={GenerateTrip}>
+            {loading ? (
+              <LiaTruckLoadingSolid className="h-7 w-7 animate-spin" />
+            ) : (
+              "Generate Trip!🗺️"
+            )}
+          </Button>
         </div>
         <ContextMenu>
           <ContextMenuTrigger></ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem>Open</ContextMenuItem>
-            <ContextMenuItem>Download</ContextMenuItem>
-            <DialogTrigger asChild>
-              <ContextMenuItem onClick={handleOpenDialog}>
-                Delete
-              </ContextMenuItem>
-            </DialogTrigger>
+            <ContextMenuItem>Profile</ContextMenuItem>
+            <ContextMenuItem>My Trips</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
-
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="">
-                <div className="flex">
-                  <img src="/logo.svg" alt="" className="" />
-                  <div className="ml-4">
-                    <h1 className="font-bold">Welcome back to AI Trip</h1>
-                    <p className="text-gray-600">
-                      Please sign in with your Google account to continue.
-                    </p>
-                  </div>
-                </div>
-              </DialogTitle>
-              <DialogDescription></DialogDescription>
-            </DialogHeader>
-            <div className="p-6 bg-gray-100 rounded-lg mb-6">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={login}
-              >
-                <FcGoogle className="text-2xl mr-3" /> Sign in with Google
-              </Button>
-            </div>
-            <DialogFooter className="flex justify-center"></DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Almost Done!</DialogTitle>
+            <DialogDescription>
+              You must log in to continue. If you don't have an account, we will
+              create a new account for you.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-[30px] flex justify-center">
+            <FcGoogle
+              onClick={() => {
+                login();
+              }}
+              size={36}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              onClick={() => {
+                handleCloseDialog();
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
